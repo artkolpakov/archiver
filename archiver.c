@@ -173,8 +173,8 @@ int main(int argc, char *argv[]){
   char *fn = argv[argc-1];
   if (argc > 2) { /* Packing files */
     FILE *fp = fopen(fn, "w");
+    // check if opening file/dir to pack failed: no such file or directory
     if (fp == NULL) {                                             //Program prints error if file open fails
-      // fprintf(stderr, "Opening file/dir to pack failed: No such file or directory\n");
       err(errno, "fopen() error");
       exit(1);
     }
@@ -183,7 +183,6 @@ int main(int argc, char *argv[]){
     char arr[argc-2][256];
     for(int i = 1; i < argc -1; i++){
       strcpy(arr[i], argv[i]);
-      // printf("Coppied %s\n", arr[i]);
     }
     //for some reason argc and argv reset to 0 and '' after pack is called, so I fixed it by making a copy
     for (int argind = 1; argind < argcCoppy - 1; ++argind){
