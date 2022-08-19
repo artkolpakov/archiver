@@ -1,6 +1,5 @@
 /*
- 7/17/2022 
- programmed by Artem Kolpakov for OPERATING SYSTEMS I (CS_344_400) Archive assignment #2
+ programmed by Artem Kolpakov
 */
 
 #include <stdlib.h>
@@ -18,7 +17,6 @@
  * Like mkdir, but creates parent paths as well
  *
  * @return 0, or -1 on error, with errno set
- * @see mkdir(2)
  */
 int mkpath(const char *pathname, mode_t mode){
   char *tmp = malloc(strlen(pathname) + 1);
@@ -45,22 +43,6 @@ int mkpath(const char *pathname, mode_t mode){
   free(tmp);
   return 0;
 }
-
-/**
- * Allocates a string containing the CWD
- *
- * @return allocated string
- */
-char * getcwd_a(void){
-  char *pwd = NULL;
-  for (size_t sz = 128;; sz *= 2){
-    pwd = realloc(pwd, sz);
-    if (getcwd(pwd, sz)) break;
-    if (errno != ERANGE) err(errno, "getcwd()");
-  }
-  return pwd;
-}
-
 
 /** 
  * Packs a single file or directory recursively
@@ -90,7 +72,6 @@ void pack(char * const fn, FILE *outfp){  //get's the length of the file name, t
         if(strcmp(".", aDir->d_name) == 0 || strcmp("..", aDir->d_name) == 0){
           continue;     //if . or .. skip it
         }
-        // char* cwd = getcwd_a();
         // printf("Recursing: %s\n", cwd);
         pack(aDir->d_name, outfp);        //grab all the potential leafs
       }
@@ -114,11 +95,6 @@ void pack(char * const fn, FILE *outfp){  //get's the length of the file name, t
       fprintf(stderr, "Size of %s: %zu\n", fn, st.st_size);
       fprintf(outfp, "%d:%s%zu:", fileNameLength, fn, st.st_size);    //write to the file filename, length
 
-      // char in[st.st_size+1];              //reading contents
-      // memset(in, '\0', st.st_size+1);
-      // fread(in, 1, st.st_size, file);     //to be replaced
-      // fwrite(in, 1, st.st_size, outfp);
-
       for (int i = 0; i < st.st_size; i++){         //reading contents
         char in[1] = {'\n'};                        //reading and writing 1 at a time
         fread(in, 1, 1, file);  
@@ -127,14 +103,7 @@ void pack(char * const fn, FILE *outfp){  //get's the length of the file name, t
       fclose(file);                                  //close file
     }
     else{
-      fprintf(stderr, "Skipping non-regular file `%s'.\n", fn);
-      // FILE* Testfile = fopen(fn, "r");      //do this to check if a non-regular file even exists.
-      // if(Testfile == NULL){
-      //   err(errno, "file/dir error");
-      //   fclose(Testfile);
-      //   exit(1);
-      // }
-      // fclose(Testfile);
+      fprintf(stderr, "Skipping non-regular file `%s'.\n", fn); //the program only archives regular text files
     }
 }
 
@@ -144,10 +113,8 @@ void pack(char * const fn, FILE *outfp){  //get's the length of the file name, t
  * @param fp The archive to unpack
 //  */
 int unpack(FILE *fp){
-  /* Get file name */
   //change and open (both)
   off_t size = 0;
-  // DIR* currDir;
   while(1){
       if (fscanf(fp, "%jd:", &size) <= 0){      //if EOF exit, reading a filename/dir length
         fprintf(stderr, "Done unpacking\n");
@@ -167,19 +134,15 @@ int unpack(FILE *fp){
       fwrite(fn, 1, size, stderr);      //printing a size
       fprintf(stderr, "\n");
 
-      // char* cwd = getcwd_a();
       if (fn[strlen(fn)-1] == '/'){
         // fprintf(stderr, "Unpacking a dir %s\n", fn);
         if (mkpath(fn, 0700)) err(errno, "mkpath()");         //create a new dir
         fprintf(stderr, "Recursing into `%s'\n", fn);
         chdir(fn);
-        // currDir = opendir("./");
         unpack(fp);                     //recursively visit other nodes
-        /* TODO */
         }
       else{
         // fprintf(stderr, "Unpacking file %s\n", fn);
-        /* TODO */
         off_t sizeOfContents = 0;
         fscanf(fp, "%jd:", &sizeOfContents);      //reading size of file contents
         fprintf(stderr, "Read size of file: %jd\n",sizeOfContents);
@@ -222,10 +185,8 @@ int main(int argc, char *argv[]){
       strcpy(arr[i], argv[i]);
       // printf("Coppied %s\n", arr[i]);
     }
-    //idk why argc and argv reset to 0 and '' so I fixed it by making a copy
+    //for some reason argc and argv reset to 0 and '' after pack is called, so I fixed it by making a copy
     for (int argind = 1; argind < argcCoppy - 1; ++argind){
-      // fprintf(stderr, "Passing: %s\n", arr[argind]);
-      // fprintf(stderr, "CALLED: %d \n", argind);
       pack(arr[argind], fp);                                     //pack all of the given arguments, write to newly created .arch file
     }
     fclose(fp);                                                   //close file
@@ -243,4 +204,3 @@ int main(int argc, char *argv[]){
   }
   return EXIT_SUCCESS;
 }
-//GOD BLESS THIS SUBMISSION
